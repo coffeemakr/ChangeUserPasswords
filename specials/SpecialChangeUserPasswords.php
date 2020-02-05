@@ -50,7 +50,6 @@ class SpecialChangeUserPasswords extends SpecialPage {
 			'userNamesSelect' => [
 				'class' => 'HTMLMultiSelectField',
 				'options' => $options,
-				'default' => $options,
 			],
 		];
 		// $msg = $this->msg( 'changeuserpassword-topheader' );
