@@ -69,12 +69,12 @@ class SpecialChangeUserPasswords extends SpecialPage {
 	}
 
 	public function trySubmit( $formData ) {
-		if ( $formData['userNamesSelect'] ) {
+		$userNames = $formData['userNamesSelect'];
+		if ( $userNames ) {
 			$passwordFactory = new PasswordFactory();
 			$passwordFactory->init( RequestContext::getMain()->getConfig() );
 			$maxUserId = 0;
 
-			$blackList = $formData['userNamesSelect'];
 			$dbr = wfGetDB( DB_MASTER );
 			$contents = '<html><body><table border = "1" cellspacing = "5"  cellpadding = "5">';
 			$contents .= '<tr><th><strong>' . "Username" . '</strong></th>' . '<th><strong>' .
@@ -91,15 +91,14 @@ class SpecialChangeUserPasswords extends SpecialPage {
 				);
 
 				foreach ( $res as $row ) {
-					$password = $passwordFactory->generateRandomPasswordString( 10 );
+					if ( in_array( $row->user_name, $userNames ) ) {
 
-					$user = User::newFromName( $row->user_name );
-					$user = User::newFromId( $row->user_id );
+						$password = $passwordFactory->generateRandomPasswordString( 10 );
 
-					try {
+						$user = User::newFromName( $row->user_name );
 
-						if ( in_array( $row->user_name, $blackList ) ) {
-
+						try {
+		
 							$status = $user->changeAuthenticationData( [
 								'username' => $user->getName(),
 								'password' => $password,
@@ -112,13 +111,10 @@ class SpecialChangeUserPasswords extends SpecialPage {
 
 							$contents .= '<tr><td>' . $user->getName() . "        " . '</td><td>' .
 								$password . '</td></tr>';
-
+						} catch ( PasswordError $pwe ) {
+							$this->fatalError( $pwe->getText() );
 						}
-
-					} catch ( PasswordError $pwe ) {
-						$this->fatalError( $pwe->getText() );
 					}
-
 				}
 
 				$maxUserId = $row->user_id;
